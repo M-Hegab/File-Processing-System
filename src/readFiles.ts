@@ -9,7 +9,7 @@ async function createFolder(dirPath: string) {
     }
 }
 
-export function countFiles(dirPath: string): number {
+export async function countFiles(dirPath: string): Promise<number> {
     createFolder(dirPath);
 
     const items = fs.readdirSync(dirPath);
@@ -20,7 +20,7 @@ export function countFiles(dirPath: string): number {
         const stats = fs.statSync(fullPath);
 
         // if (stats.isDirectory()) {
-        //     totalFiles += countFiles(fullPath);
+        //     totalFiles += await countFiles(fullPath);
         // } 
         if (stats.isFile()) {
             totalFiles += 1;
