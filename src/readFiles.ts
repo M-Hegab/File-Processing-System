@@ -1,27 +1,24 @@
-import fs from 'fs';
-import path from 'path';
+import { mkdir, readdir, stat } from 'node:fs/promises';
+import path from 'node:path';
 
-async function createFolder(dirPath: string) {
+async function createFolder(dirPath: string): Promise<void> {
     try {
-        await fs.mkdirSync(dirPath, { recursive: true });
+        await mkdir(dirPath, { recursive: true });
     } catch (err) {
         console.error('Error creating folder:', err);
     }
 }
 
 export async function countFiles(dirPath: string): Promise<number> {
-    createFolder(dirPath);
+    await createFolder(dirPath);
 
-    const items = fs.readdirSync(dirPath);
+    const items = await readdir(dirPath);
     let totalFiles = 0;
 
     for (const item of items) {
         const fullPath = path.join(dirPath, item);
-        const stats = fs.statSync(fullPath);
-
-        // if (stats.isDirectory()) {
-        //     totalFiles += await countFiles(fullPath);
-        // } 
+        const stats = await stat(fullPath);
+        
         if (stats.isFile()) {
             totalFiles += 1;
             console.log(item);
