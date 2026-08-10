@@ -1,11 +1,11 @@
-const incomingFolder: string = './incoming';
-const dotenv = require('dotenv');
+import dotenv from 'dotenv';
+import { app } from './app.js';
+import { countFiles } from './filesScan.js';
 dotenv.config({debug: true});
-const { app } = require('./app.js');
-const { CountFiles } = require('./filesScan');
-const port = process.env.PORT;
+const port = process.env.PORT || 3000;
+const incomingFolder: string = './incoming';
 
-console.log(CountFiles(incomingFolder));
+console.log(countFiles(incomingFolder));
 
 app.listen(port, () => {
   console.log(`File Processing System listening on port ${port}`);

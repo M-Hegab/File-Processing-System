@@ -1,15 +1,15 @@
-const fs = require('fs');
-const path = require('path')
+import fs from 'fs';
+import path from 'path';
 
 async function createFolder(dirPath: string) {
-    try{
-        fs.mkdirSync(dirPath, { recursive: true });
-    }catch(err){
+    try {
+        await fs.mkdirSync(dirPath, { recursive: true });
+    } catch (err) {
         console.error('Error creating folder:', err);
     }
 }
 
-function CountFiles(dirPath: string): number {
+export function countFiles(dirPath: string): number {
     createFolder(dirPath);
 
     const items = fs.readdirSync(dirPath);
@@ -19,16 +19,13 @@ function CountFiles(dirPath: string): number {
         const fullPath = path.join(dirPath, item);
         const stats = fs.statSync(fullPath);
 
-        if (stats.isDirectory()) {
-            totalFiles += CountFiles(fullPath);
-        } else if (stats.isFile()) {
+        // if (stats.isDirectory()) {
+        //     totalFiles += countFiles(fullPath);
+        // } 
+        if (stats.isFile()) {
             totalFiles += 1;
+            console.log(item);
         }
     }
     return totalFiles;
-}
-
-
-module.exports = {
-    CountFiles,
 }

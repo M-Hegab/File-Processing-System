@@ -1,6 +1,2 @@
-const express = require('express');
-const app = express();
-
-module.exports = {
-    app,
-}
+import express from 'express';
+export const app = express();
