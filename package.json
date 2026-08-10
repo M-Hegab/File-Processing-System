@@ -2,14 +2,13 @@
   "name": "file-processing-system",
   "version": "1.0.0",
   "description": "",
-  "main": "server.js",
+  "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint .",
-    "list": "eslint .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -25,9 +24,7 @@
   "homepage": "https://github.com/M-Hegab/File-Processing-System#readme",
   "dependencies": {
     "dotenv": "^17.4.2",
-    "express": "^5.2.1",
-    "tsx": "^4.23.12",
-    "type-check": "^0.4.0"
+    "express": "^5.2.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -37,6 +34,7 @@
     "eslint": "^10.8.1",
     "globals": "^17.9.0",
     "typescript": "^5.5.4",
-    "typescript-eslint": "^8.66.0"
+    "typescript-eslint": "^8.66.0",
+    "tsx": "^4.23.12"
   }
 }

@@ -1,8 +1,8 @@
 const dotenv = require('dotenv');
-const express = require('express');
-dotenv.config();
+const { app } = require('./app.js');
 
-const app = express();
+dotenv.config({debug: true});
+
 const port = process.env.PORT;
 
 app.listen(port, () => {
