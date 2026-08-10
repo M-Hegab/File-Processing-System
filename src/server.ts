@@ -1,9 +1,11 @@
-const dotenv = require('dotenv');
-const express = require('express');
+import dotenv from 'dotenv';
+import { app } from './app.js';
+import { countFiles } from './readFiles.js';
 dotenv.config();
+const port = process.env.PORT || 3000;
+const incomingFolder: string = './incomingFiles';
 
-const app = express();
-const port = process.env.PORT;
+console.log(await countFiles(incomingFolder), "files waiting for processing");
 
 app.listen(port, () => {
   console.log(`File Processing System listening on port ${port}`);
