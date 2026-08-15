@@ -25,11 +25,15 @@ interface processingResult {
 }
 
 async function readFiles(dirPath: string): Promise<void> {
-  const ProcessingFiles: string[] = await incomingFiles(dirPath);
-//   let PocessSucceeded: number = 0;
-//   let PocessFailed: number = 0;
-  for (const [index, file] of ProcessingFiles.entries()) {
+  //   let PocessSucceeded: number = 0;
+  //   let PocessFailed: number = 0;
+  const files2Process: number = await countFiles(INCOMING_FOLDER);
+  let index: number = 1;
+  while (index <= files2Process) {
+    let file: string = await incomingFiles(dirPath);
+    console.log(`Processing now: ${path.basename(file)}`);
     const content: string = await fs.readFile(file, "utf-8");
+    file = await moveFiles(INCOMING_FOLDER, PROCESSING_FOLDER, file);
     const processingResult: processingResult = {
       id: index + 1,
       name: path.basename(file),
@@ -43,6 +47,7 @@ async function readFiles(dirPath: string): Promise<void> {
     await createJsonFile(JSON_FOLDER, file, processingResult);
     await moveFiles(PROCESSING_FOLDER, PROCESSED_FOLDER, file);
     console.log(`Processed Sucessfully: ${path.basename(file)}`);
+    index++;
   }
 }
 
@@ -50,8 +55,7 @@ async function processingFiles(): Promise<void> {
   const files2Process: number = await countFiles(INCOMING_FOLDER);
   console.log(files2Process, "Files waiting for processing");
   if (files2Process !== 0) {
-    await moveFiles(INCOMING_FOLDER, PROCESSING_FOLDER);
-    await readFiles(PROCESSING_FOLDER);
+    await readFiles(INCOMING_FOLDER);
   }
 }
 

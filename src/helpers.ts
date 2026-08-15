@@ -9,17 +9,17 @@ async function createFolder(dirPath: string): Promise<void> {
   }
 }
 
-async function incomingFiles(dirPath: string): Promise<string[]> {
+async function incomingFiles(dirPath: string): Promise<string> {
   await createFolder(dirPath);
   const items = await fs.readdir(dirPath);
-  const incomingFiles: string[] = [];
+  let incomingFiles: string = '';
 
   for (const item of items) {
     const fullPath = path.join(dirPath, item);
     const stats = await fs.stat(fullPath);
 
     if (stats.isFile() && path.extname(item).toLowerCase() === ".txt") {
-      incomingFiles.push(fullPath);
+      incomingFiles = fullPath;
     } else {
       console.warn(`Skipping unsupported file: ${path.basename(item)}`);
     }
@@ -29,31 +29,37 @@ async function incomingFiles(dirPath: string): Promise<string[]> {
 }
 
 async function countFiles(dirPath: string): Promise<number> {
-  const totalFiles = await incomingFiles(dirPath);
-  return totalFiles.length;
+  const totalFiles = await fs.readdir(dirPath);
+  const txtFiles = totalFiles.filter(
+    (file) => path.extname(file).toLowerCase() === ".txt",
+  );
+  return txtFiles.length;
 }
 
 async function moveFiles(
   firstDirPath: string,
   secDirPath: string,
   filePath?: string,
-): Promise<void> {
+): Promise<string> {
   await createFolder(firstDirPath);
   await createFolder(secDirPath);
+
+  let dest, fileName: string = '';
   if (filePath) {
-    const fileName = path.basename(filePath);
-    const dest = path.join(secDirPath, fileName);
+    fileName = path.basename(filePath);
+    dest = path.join(secDirPath, fileName);
 
     await fs.rename(filePath, dest);
   } else {
     const processedFiles = await incomingFiles(firstDirPath);
     for (const file of processedFiles) {
-      const fileName = path.basename(file);
-      const dest = path.join(secDirPath, fileName);
+      fileName = path.basename(file);
+      dest = path.join(secDirPath, fileName);
 
       await fs.rename(file, dest);
     }
   }
+  return dest || '';
 }
 
 async function createJsonFile(
