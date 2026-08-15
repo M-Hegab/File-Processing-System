@@ -29,6 +29,7 @@ async function incomingFiles(dirPath: string): Promise<string> {
 }
 
 async function countFiles(dirPath: string): Promise<number> {
+  await createFolder(dirPath);
   const totalFiles = await fs.readdir(dirPath);
   const txtFiles = totalFiles.filter(
     (file) => path.extname(file).toLowerCase() === ".txt",
@@ -69,7 +70,7 @@ async function createJsonFile(
 ): Promise<void> {
   await createFolder(dirPath);
   const fileName: string = path.basename(filePath);
-  const jsonFile = path.join(dirPath, fileName.replace(".txt", ".json"));
+  const jsonFile = path.join(dirPath, fileName.toLocaleLowerCase().replace(".txt", ".json"));
   return await fs.writeFile(jsonFile, JSON.stringify(data), "utf-8");
 }
 
