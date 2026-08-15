@@ -11,7 +11,7 @@
     "target": "esnext",
     "lib": ["esnext"],
     "types": ["node"],
-    
+
     // Other Outputs
     "sourceMap": true,
     "declaration": true,
@@ -35,6 +35,6 @@
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "moduleDetection": "force",
-    "skipLibCheck": true,
+    "skipLibCheck": true
   }
 }
