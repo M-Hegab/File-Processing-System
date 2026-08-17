@@ -36,11 +36,21 @@ async function incomingFiles(dirPath: string): Promise<string> {
 async function countFiles(dirPath: string): Promise<number> {
   await createFolder(dirPath);
   try {
-    const totalFiles = await fs.readdir(dirPath);
-    const txtFiles = totalFiles.filter(
-      (file) => path.extname(file).toLowerCase() === ".txt",
-    );
-    return txtFiles.length;
+    const entries = await fs.readdir(dirPath);
+    let count = 0;
+    for (const entry of entries) {
+      if (path.extname(entry).toLowerCase() === ".txt") {
+        try {
+          const stats = await fs.stat(path.join(dirPath, entry));
+          if (stats.isFile()) {
+            count++;
+          }
+        } catch (err) {
+          console.error(`Error stating file ${path.basename(entry)}:`, err);
+        }
+      }
+    }
+    return count;
   } catch (err) {
     console.error("Error counting files:", err);
     return 0;

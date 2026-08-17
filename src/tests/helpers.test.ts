@@ -65,6 +65,7 @@ describe("countFiles", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mkdir.mockResolvedValue(undefined);
+    stat.mockResolvedValue(mockStat(true));
   });
 
   it("returns count of .txt files only", async () => {
@@ -94,6 +95,15 @@ describe("countFiles", () => {
     expect(result).toBe(0);
     expect(consoleSpy).toHaveBeenCalled();
     consoleSpy.mockRestore();
+  });
+
+  it("does not count directories even if their names end with .txt", async () => {
+    readdir.mockResolvedValue(["a.txt", "archive.txt", "b.txt"]);
+    stat.mockResolvedValueOnce(mockStat(true))
+      .mockResolvedValueOnce(mockStat(false))
+      .mockResolvedValueOnce(mockStat(true));
+    const result = await countFiles("/incoming");
+    expect(result).toBe(2);
   });
 });
 

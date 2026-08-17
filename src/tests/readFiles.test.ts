@@ -1,7 +1,7 @@
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import * as path from "node:path";
 
-const { readFile, readdir, stat, mkdir, rename, writeFile } = vi.hoisted(
+const { readFile, readdir, stat, mkdir, rename, writeFile, unlink } = vi.hoisted(
   () => ({
     readFile: vi.fn(),
     readdir: vi.fn(),
@@ -9,6 +9,7 @@ const { readFile, readdir, stat, mkdir, rename, writeFile } = vi.hoisted(
     mkdir: vi.fn(),
     rename: vi.fn(),
     writeFile: vi.fn(),
+    unlink: vi.fn(),
   }),
 );
 
@@ -19,6 +20,7 @@ vi.mock("node:fs/promises", () => ({
   mkdir,
   rename,
   writeFile,
+  unlink,
 }));
 
 import {
@@ -159,5 +161,75 @@ describe("readFiles", () => {
     await readFiles(INCOMING_FOLDER);
 
     expect(readFile).toHaveBeenCalledTimes(1);
+  });
+
+  it("reports zero characters, words, and lines for empty file", async () => {
+    readdir.mockResolvedValue(["empty.txt"]);
+    stat.mockResolvedValue(mockStat(true, 0));
+    readFile.mockResolvedValue("");
+    rename.mockResolvedValue(undefined);
+    writeFile.mockResolvedValue(undefined);
+
+    await readFiles(INCOMING_FOLDER);
+
+    expect(writeFile).toHaveBeenCalledTimes(1);
+    const [, jsonData] = writeFile.mock.calls[0];
+    const result = JSON.parse(jsonData as string);
+    expect(result.characters).toBe(0);
+    expect(result.words).toBe(0);
+    expect(result.lines).toBe(0);
+  });
+
+  it("continues processing after a file fails: bad.txt fails, good.txt succeeds", async () => {
+    readdir
+      .mockResolvedValueOnce(["bad.txt", "good.txt"])
+      .mockResolvedValueOnce(["bad.txt", "good.txt"])
+      .mockResolvedValueOnce(["bad.txt"]);
+    stat.mockResolvedValue(mockStat(true, 10));
+    readFile
+      .mockResolvedValueOnce("good content")
+      .mockRejectedValueOnce(new Error("read error"));
+    rename.mockResolvedValue(undefined);
+    writeFile.mockResolvedValue(undefined);
+
+    await readFiles(INCOMING_FOLDER);
+
+    expect(readFile).toHaveBeenCalledTimes(2);
+    expect(writeFile).toHaveBeenCalledTimes(1);
+    expect(writeFile).toHaveBeenCalledWith(
+      path.join(JSON_FOLDER, "good.json"),
+      expect.any(String),
+      "utf-8",
+    );
+    expect(mkdir).toHaveBeenCalledWith(FAILED_FOLDER, { recursive: true });
+    expect(rename).toHaveBeenCalledWith(
+      path.join(INCOMING_FOLDER, "bad.txt"),
+      path.join(FAILED_FOLDER, "bad.txt"),
+    );
+    expect(rename).toHaveBeenCalledWith(
+      path.join(PROCESSING_FOLDER, "good.txt"),
+      path.join(PROCESSED_FOLDER, "good.txt"),
+    );
+  });
+
+  it("removes JSON artifact when processing fails after JSON creation", async () => {
+    readdir.mockResolvedValue(["test.txt"]);
+    stat.mockResolvedValue(mockStat(true, 11));
+    readFile.mockResolvedValue("hello world");
+    writeFile.mockResolvedValue(undefined);
+    unlink.mockResolvedValue(undefined);
+
+    rename
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error("move to processed failed"))
+      .mockResolvedValue(undefined);
+
+    await readFiles(INCOMING_FOLDER);
+
+    expect(unlink).toHaveBeenCalledWith(path.join(JSON_FOLDER, "test.json"));
+    expect(rename).toHaveBeenCalledWith(
+      path.join(PROCESSING_FOLDER, "test.txt"),
+      path.join(FAILED_FOLDER, "test.txt"),
+    );
   });
 });

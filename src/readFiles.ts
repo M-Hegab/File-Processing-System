@@ -14,7 +14,7 @@ const FAILED_FOLDER: string = path.join(FILES_FOLDER, "/failed");
 const PROCESSING_FOLDER: string = path.join(FILES_FOLDER, "/processing");
 const PROCESSED_FOLDER: string = path.join(FILES_FOLDER, "/processed");
 const JSON_FOLDER: string = path.join(FILES_FOLDER, "/json");
-interface processingResult {
+interface ProcessingResult {
   id: number;
   name: string;
   content: string;
@@ -29,15 +29,15 @@ async function buildProcessingResult(
   file: string,
   content: string,
   index: number,
-): Promise<processingResult> {
+): Promise<ProcessingResult> {
   return {
-    id: index + 1,
+    id: index,
     name: path.basename(file),
     content: content,
     sizeBytes: (await fs.stat(file)).size,
     characters: content.length,
-    words: content.trim().split(/\s+/).length,
-    lines: content.split(/\r?\n/).length,
+    words: content.trim() === "" ? 0 : content.trim().split(/\s+/).length,
+    lines: content === "" ? 0 : content.split(/\r?\n/).length,
     processedAt: new Date().toISOString(),
   };
 }
@@ -51,6 +51,24 @@ async function moveToFailed(file: string): Promise<void> {
       `Failed to move ${path.basename(file)} to failed folder:`,
       moveErr,
     );
+  }
+}
+
+async function cleanupJsonArtifact(filePath: string): Promise<void> {
+  const jsonFile = path.join(
+    JSON_FOLDER,
+    path.basename(filePath).toLowerCase().replace(".txt", ".json"),
+  );
+  try {
+    await fs.unlink(jsonFile);
+  } catch (err) {
+    const nodeErr = err as NodeJS.ErrnoException;
+    if (nodeErr.code !== "ENOENT") {
+      console.error(
+        `Error cleaning up JSON artifact for ${path.basename(filePath)}:`,
+        err,
+      );
+    }
   }
 }
 
@@ -74,6 +92,7 @@ async function readFiles(dirPath: string): Promise<void> {
     } catch (err) {
       console.error(`Error processing ${path.basename(file)}:`, err);
       await moveToFailed(file);
+      await cleanupJsonArtifact(file);
     }
     index++;
   }
