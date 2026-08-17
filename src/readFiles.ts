@@ -5,11 +5,12 @@ import {
   countFiles,
   moveFiles,
   createJsonFile,
+  createFolder,
 } from "./helpers.js";
 
 const FILES_FOLDER: string = "./Files";
 const INCOMING_FOLDER: string = path.join(FILES_FOLDER, "/incoming");
-// const FAILED_FOLDER: string = path.join(FILES_FOLDER, "/failed");
+const FAILED_FOLDER: string = path.join(FILES_FOLDER, "/failed");
 const PROCESSING_FOLDER: string = path.join(FILES_FOLDER, "/processing");
 const PROCESSED_FOLDER: string = path.join(FILES_FOLDER, "/processed");
 const JSON_FOLDER: string = path.join(FILES_FOLDER, "/json");
@@ -24,29 +25,56 @@ interface processingResult {
   processedAt: string;
 }
 
+async function buildProcessingResult(
+  file: string,
+  content: string,
+  index: number,
+): Promise<processingResult> {
+  return {
+    id: index + 1,
+    name: path.basename(file),
+    content: content,
+    sizeBytes: (await fs.stat(file)).size,
+    characters: content.length,
+    words: content.trim().split(/\s+/).length,
+    lines: content.split(/\r?\n/).length,
+    processedAt: new Date().toISOString(),
+  };
+}
+
+async function moveToFailed(file: string): Promise<void> {
+  try {
+    await createFolder(FAILED_FOLDER);
+    await fs.rename(file, path.join(FAILED_FOLDER, path.basename(file)));
+  } catch (moveErr) {
+    console.error(
+      `Failed to move ${path.basename(file)} to failed folder:`,
+      moveErr,
+    );
+  }
+}
+
 async function readFiles(dirPath: string): Promise<void> {
-  //   let PocessSucceeded: number = 0;
-  //   let PocessFailed: number = 0;
   const files2Process: number = await countFiles(INCOMING_FOLDER);
   let index: number = 1;
   while (index <= files2Process) {
     let file: string = await incomingFiles(dirPath);
+    if (!file) {
+      console.warn(`No .txt file found to process, stopping.`);
+      break;
+    }
     console.log(`Processing now: ${path.basename(file)}`);
-    const content: string = await fs.readFile(file, "utf-8");
-    file = await moveFiles(INCOMING_FOLDER, PROCESSING_FOLDER, file);
-    const processingResult: processingResult = {
-      id: index + 1,
-      name: path.basename(file),
-      content: content,
-      sizeBytes: (await fs.stat(file)).size,
-      characters: content.length,
-      words: content.trim().split(/\s+/).length,
-      lines: content.split(/\r?\n/).length,
-      processedAt: new Date().toISOString(),
-    };
-    await createJsonFile(JSON_FOLDER, file, processingResult);
-    await moveFiles(PROCESSING_FOLDER, PROCESSED_FOLDER, file);
-    console.log(`Processed Sucessfully: ${path.basename(file)}`);
+    try {
+      const content: string = await fs.readFile(file, "utf-8");
+      file = await moveFiles(INCOMING_FOLDER, PROCESSING_FOLDER, file);
+      const processingResult = await buildProcessingResult(file, content, index);
+      await createJsonFile(JSON_FOLDER, file, processingResult);
+      await moveFiles(PROCESSING_FOLDER, PROCESSED_FOLDER, file);
+      console.log(`Processed Sucessfully: ${path.basename(file)}`);
+    } catch (err) {
+      console.error(`Error processing ${path.basename(file)}:`, err);
+      await moveToFailed(file);
+    }
     index++;
   }
 }
@@ -59,4 +87,13 @@ async function processingFiles(): Promise<void> {
   }
 }
 
-export { processingFiles };
+export {
+  readFiles,
+  processingFiles,
+  FILES_FOLDER,
+  INCOMING_FOLDER,
+  FAILED_FOLDER,
+  PROCESSING_FOLDER,
+  PROCESSED_FOLDER,
+  JSON_FOLDER,
+};

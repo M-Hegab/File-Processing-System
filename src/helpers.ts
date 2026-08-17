@@ -11,30 +11,49 @@ async function createFolder(dirPath: string): Promise<void> {
 
 async function incomingFiles(dirPath: string): Promise<string> {
   await createFolder(dirPath);
-  const items = await fs.readdir(dirPath);
-  let incomingFiles: string = '';
-
-  for (const item of items) {
-    const fullPath = path.join(dirPath, item);
-    const stats = await fs.stat(fullPath);
-
-    if (stats.isFile() && path.extname(item).toLowerCase() === ".txt") {
-      incomingFiles = fullPath;
-    } else {
-      console.warn(`Skipping unsupported file: ${path.basename(item)}`);
+  let incomingFile: string = "";
+  try {
+    const items = await fs.readdir(dirPath);
+    for (const item of items) {
+      const fullPath = path.join(dirPath, item);
+      try {
+        const stats = await fs.stat(fullPath);
+        if (stats.isFile() && path.extname(item).toLowerCase() === ".txt") {
+          incomingFile = fullPath;
+        } else {
+          console.warn(`Skipping unsupported file: ${path.basename(item)}`);
+        }
+      } catch (err) {
+        console.error(`Error stating file ${path.basename(item)}:`, err);
+      }
     }
+  } catch (err) {
+    console.error("Error reading directory:", err);
   }
-
-  return incomingFiles;
+  return incomingFile;
 }
 
 async function countFiles(dirPath: string): Promise<number> {
   await createFolder(dirPath);
-  const totalFiles = await fs.readdir(dirPath);
-  const txtFiles = totalFiles.filter(
-    (file) => path.extname(file).toLowerCase() === ".txt",
-  );
-  return txtFiles.length;
+  try {
+    const totalFiles = await fs.readdir(dirPath);
+    const txtFiles = totalFiles.filter(
+      (file) => path.extname(file).toLowerCase() === ".txt",
+    );
+    return txtFiles.length;
+  } catch (err) {
+    console.error("Error counting files:", err);
+    return 0;
+  }
+}
+
+async function renameFile(srcPath: string, destPath: string): Promise<void> {
+  try {
+    await fs.rename(srcPath, destPath);
+  } catch (err) {
+    console.error(`Error moving file ${path.basename(srcPath)}:`, err);
+    throw err;
+  }
 }
 
 async function moveFiles(
@@ -45,22 +64,20 @@ async function moveFiles(
   await createFolder(firstDirPath);
   await createFolder(secDirPath);
 
-  let dest, fileName: string = '';
+  let dest: string = '';
   if (filePath) {
-    fileName = path.basename(filePath);
+    const fileName = path.basename(filePath);
     dest = path.join(secDirPath, fileName);
-
-    await fs.rename(filePath, dest);
+    await renameFile(filePath, dest);
   } else {
-    const processedFiles = await incomingFiles(firstDirPath);
-    for (const file of processedFiles) {
-      fileName = path.basename(file);
+    const foundFile = await incomingFiles(firstDirPath);
+    if (foundFile) {
+      const fileName = path.basename(foundFile);
       dest = path.join(secDirPath, fileName);
-
-      await fs.rename(file, dest);
+      await renameFile(foundFile, dest);
     }
   }
-  return dest || '';
+  return dest;
 }
 
 async function createJsonFile(
@@ -71,7 +88,12 @@ async function createJsonFile(
   await createFolder(dirPath);
   const fileName: string = path.basename(filePath);
   const jsonFile = path.join(dirPath, fileName.toLocaleLowerCase().replace(".txt", ".json"));
-  return await fs.writeFile(jsonFile, JSON.stringify(data), "utf-8");
+  try {
+    return await fs.writeFile(jsonFile, JSON.stringify(data), "utf-8");
+  } catch (err) {
+    console.error(`Error writing JSON file ${path.basename(jsonFile)}:`, err);
+    throw err;
+  }
 }
 
-export { incomingFiles, countFiles, moveFiles, createJsonFile };
+export { incomingFiles, countFiles, moveFiles, createJsonFile, createFolder };
