@@ -5,7 +5,7 @@ import json from "@eslint/json";
 
 export default [
   {
-    ignores: ["dist/**", "node_modules/**", "package-lock.json"],
+    ignores: ["dist/**", "node_modules/**", "**/package-lock.json"],
   },
   {
     files: ["**/*.{js,mjs,cjs,ts,mts,cts}"],
@@ -18,6 +18,7 @@ export default [
       globals: {
         ...globals.browser,
         ...globals.node,
+        ...globals.vitest,
       },
     },
   },
@@ -29,7 +30,7 @@ export default [
   },
   {
     files: ["**/*.json"],
-    ignores: ["package-lock.json", "tsconfig.json"],
+    ignores: ["**/package-lock.json", "tsconfig.json"],
     plugins: {
       json,
     },
