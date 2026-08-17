@@ -23,7 +23,7 @@ import {
   countFiles,
   moveFiles,
   createJsonFile,
-} from "./helpers.js";
+} from "../helpers.js";
 
 type fsStat = { isFile: () => boolean; size: number };
 

@@ -29,7 +29,7 @@ import {
   PROCESSING_FOLDER,
   PROCESSED_FOLDER,
   JSON_FOLDER,
-} from "./readFiles.js";
+} from "../readFiles.js";
 
 const mockStat = (isFile: boolean = true, size: number = 100) => ({
   isFile: () => isFile,
